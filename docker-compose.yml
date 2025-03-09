@@ -2,9 +2,11 @@ services:
   mail-server:
     build: .
     ports:
-      - "4058:4058"
+      - "4058:4058"  # Port HTTP
+      - "4059:4059"  # Port HTTPS
     env_file:
       - .env
     restart: unless-stopped
     volumes:
       - ./logs:/app/logs
+      - /etc/letsencrypt:/etc/letsencrypt:ro  # Montage des certificats SSL (lecture seule)
