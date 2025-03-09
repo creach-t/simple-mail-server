@@ -1,0 +1,12 @@
+version: '3'
+
+services:
+  mail-server:
+    build: .
+    ports:
+      - "4058:4058"
+    env_file:
+      - .env
+    restart: unless-stopped
+    volumes:
+      - ./logs:/app/logs
