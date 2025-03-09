@@ -11,8 +11,9 @@ RUN npm install --omit=dev
 # Copier le reste des fichiers
 COPY . .
 
-# Exposer le port défini dans les variables d'environnement
+# Exposer les ports HTTP et HTTPS
 EXPOSE 4058
+EXPOSE 4059
 
 # Commande de démarrage
 CMD ["node", "server.js"]
