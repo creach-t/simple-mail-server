@@ -4,17 +4,22 @@ const bodyParser = require('body-parser');
 const cors = require('cors');
 const dotenv = require('dotenv');
 const rateLimit = require('express-rate-limit');
+const fs = require('fs');
+const http = require('http');
+const https = require('https');
+const path = require('path');
 
 // Charger les variables d'environnement
 dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 4058;
+const HTTPS_PORT = process.env.HTTPS_PORT || 4059;
 
 // Middleware
 app.use(cors({
   origin: process.env.ALLOWED_ORIGINS ? process.env.ALLOWED_ORIGINS.split(',') : '*',
-  methods: ['POST'],
+  methods: ['POST', 'GET', 'OPTIONS'],
   allowedHeaders: ['Content-Type']
 }));
 
@@ -154,7 +159,37 @@ app.post('/api/contact', async (req, res) => {
   }
 });
 
-// Démarrer le serveur
-app.listen(PORT, () => {
-  console.log(`Serveur de mailing en écoute sur le port ${PORT}`);
+// Démarrer le serveur HTTP
+const httpServer = http.createServer(app);
+httpServer.listen(PORT, () => {
+  console.log(`Serveur HTTP en écoute sur le port ${PORT}`);
 });
+
+// Démarrer le serveur HTTPS si les certificats sont disponibles
+try {
+  // Chemin vers les certificats SSL
+  const sslPath = process.env.SSL_PATH || '/etc/letsencrypt/live/your-domain';
+  
+  // Vérifier si les certificats existent
+  if (fs.existsSync(path.join(sslPath, 'privkey.pem')) && 
+      fs.existsSync(path.join(sslPath, 'cert.pem')) && 
+      fs.existsSync(path.join(sslPath, 'chain.pem'))) {
+    
+    const credentials = {
+      key: fs.readFileSync(path.join(sslPath, 'privkey.pem'), 'utf8'),
+      cert: fs.readFileSync(path.join(sslPath, 'cert.pem'), 'utf8'),
+      ca: fs.readFileSync(path.join(sslPath, 'chain.pem'), 'utf8')
+    };
+    
+    const httpsServer = https.createServer(credentials, app);
+    httpsServer.listen(HTTPS_PORT, () => {
+      console.log(`Serveur HTTPS en écoute sur le port ${HTTPS_PORT}`);
+    });
+  } else {
+    console.log('Certificats SSL non trouvés. Le serveur fonctionne uniquement en HTTP.');
+    console.log(`Pour générer des certificats SSL, utilisez Let's Encrypt (certbot).`);
+  }
+} catch (error) {
+  console.error('Erreur lors du démarrage du serveur HTTPS:', error);
+  console.log('Le serveur fonctionne uniquement en HTTP.');
+}
