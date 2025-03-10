@@ -8,6 +8,8 @@ Un serveur Node.js complet pour gérer l'envoi d'emails à partir d'un formulair
 - Envoi automatique d'un email de confirmation à l'expéditeur
 - Support pour SMTP local (Postfix) ou services externes (SendGrid, etc.)
 - **Postfix intégré directement dans le conteneur Docker**
+- **Chiffrement TLS pour la sécurité des emails**
+- **Support DKIM pour l'authentification des emails**
 - Protection contre les abus avec rate limiting
 - Configuration facile via variables d'environnement
 - **Port par défaut : 4058**
@@ -61,10 +63,34 @@ Si vous préférez utiliser un service comme SendGrid, Mailgun, etc., configurez
 ```
 SMTP_HOST=smtp.sendgrid.net
 SMTP_PORT=587
-SMTP_SECURE=false
+SMTP_SECURE=true
 SMTP_USER=apikey
 SMTP_PASS=votre_cle_api
 ```
+
+### Configuration DKIM (pour améliorer la délivrabilité)
+
+Pour configurer DKIM, qui améliore considérablement la délivrabilité et l'authenticité de vos emails :
+
+1. Générez une paire de clés DKIM :
+   ```bash
+   openssl genrsa -out private.key 2048
+   openssl rsa -in private.key -pubout -out public.key
+   ```
+
+2. Configurez votre DNS en ajoutant un enregistrement TXT :
+   ```
+   mail._domainkey.votredomaine.com. IN TXT "v=DKIM1; k=rsa; p=VOTRE_CLE_PUBLIQUE"
+   ```
+   (Remplacez VOTRE_CLE_PUBLIQUE par le contenu de public.key, sans les en-têtes et en supprimant les sauts de ligne)
+
+3. Dans votre fichier `.env`, ajoutez :
+   ```
+   DKIM_DOMAIN=votredomaine.com
+   DKIM_SELECTOR=mail
+   DKIM_PRIVATE_KEY=-----BEGIN PRIVATE KEY-----\nContenu de votre clé privée ici\n-----END PRIVATE KEY-----
+   ```
+   Note : Pour le DKIM_PRIVATE_KEY, utilisez la clé avec des \n pour les sauts de ligne.
 
 ## Démarrage
 
@@ -131,19 +157,6 @@ const handleSubmit = async (e) => {
 
 ## Déploiement
 
-### Sur un VPS ou serveur dédié
-
-1. Transférez les fichiers sur votre serveur
-2. Installez les dépendances : `npm install --production`
-3. Créez et configurez le fichier `.env`
-4. Démarrez avec PM2 pour le maintenir actif :
-   ```bash
-   npm install -g pm2
-   pm2 start server.js --name "mail-server"
-   pm2 save
-   pm2 startup
-   ```
-
 ### Avec Docker (recommandé)
 
 1. Assurez-vous que Docker et Docker Compose sont installés sur votre serveur
@@ -154,11 +167,26 @@ const handleSubmit = async (e) => {
    docker-compose up -d
    ```
 
-Le serveur est entièrement autonome, avec Postfix installé directement dans le conteneur Docker. Vous n'avez pas besoin d'installer séparément un serveur de messagerie sur votre machine hôte.
+Le serveur est entièrement autonome, avec Postfix installé directement dans le conteneur Docker et configuré pour le chiffrement TLS. Vous n'avez pas besoin d'installer séparément un serveur de messagerie sur votre machine hôte.
 
-### Sur un service PaaS (Heroku, Railway, etc.)
+### Sur un VPS ou serveur dédié (sans Docker)
 
-Suivez la documentation du service pour déployer une application Node.js et configurez les variables d'environnement via l'interface du service.
+1. Transférez les fichiers sur votre serveur
+2. Installez les dépendances : `npm install --production`
+3. Créez et configurez le fichier `.env`
+4. Installez Postfix : `sudo apt install postfix` ou équivalent
+5. Configurez Postfix pour TLS :
+   ```bash
+   sudo postconf -e "smtpd_tls_security_level = may"
+   sudo postconf -e "smtp_tls_security_level = may"
+   ```
+6. Démarrez avec PM2 pour le maintenir actif :
+   ```bash
+   npm install -g pm2
+   pm2 start server.js --name "mail-server"
+   pm2 save
+   pm2 startup
+   ```
 
 ## Test du serveur
 
@@ -182,9 +210,18 @@ Si vous rencontrez des erreurs de connexion SMTP, vérifiez :
 - Si vous utilisez le serveur Postfix intégré, assurez-vous que le port 25 n'est pas bloqué
 - Si vous utilisez un service SMTP externe, vérifiez vos identifiants et la configuration dans le fichier `.env`
 
+### Problèmes de délivrabilité des emails
+
+Si vos emails arrivent dans les spams ou ne sont pas délivrés :
+1. Vérifiez que votre domaine a un enregistrement SPF correct
+2. Configurez DKIM comme expliqué ci-dessus
+3. Assurez-vous que l'adresse d'expéditeur correspond bien à votre domaine
+
 ## Sécurité
 
 - Ce serveur inclut une protection contre les abus (5 requêtes max par 15 minutes)
+- Le chiffrement TLS est activé par défaut pour les connexions SMTP
+- Support DKIM pour l'authentification des emails
 - Validez toujours les entrées côté client ET côté serveur
 - Envisagez d'ajouter un CAPTCHA pour une sécurité supplémentaire
 
