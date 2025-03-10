@@ -65,7 +65,6 @@ N'hésitez pas à consulter mon portfolio pour découvrir mes derniers projets e
         </div>
         
         <div style="${env.FOOTER_STYLE || 'background-color: #f3f4f6; padding: 15px; text-align: center; font-size: 0.8em; color: #6b7280;'}">
-          <p>&copy; ${new Date().getFullYear()} ${env.SITE_NAME || 'Portfolio'} - Tous droits réservés</p>
           <p>Cet email est une confirmation automatique, merci de ne pas y répondre directement.</p>
         </div>
       </div>
