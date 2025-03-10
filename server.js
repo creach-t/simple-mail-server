@@ -13,6 +13,9 @@ const path = require('path');
 dotenv.config();
 
 const app = express();
+// Configuration pour faire confiance au proxy - AJOUTÉ
+app.set('trust proxy', 1);
+
 const PORT = process.env.PORT || 4058;
 const HTTPS_PORT = process.env.HTTPS_PORT || 4059;
 
@@ -162,7 +165,7 @@ app.post('/api/contact', async (req, res) => {
 // Démarrer le serveur HTTP
 const httpServer = http.createServer(app);
 httpServer.listen(PORT, () => {
-  console.log(`Serveur HTTP en écoute sur le port ${PORT}`);
+  console.log(`Serveur de mailing en écoute sur le port ${PORT}`);
 });
 
 // Démarrer le serveur HTTPS si les certificats sont disponibles
