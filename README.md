@@ -10,6 +10,7 @@ Un serveur Node.js complet pour gérer l'envoi d'emails à partir d'un formulair
 - **Postfix intégré directement dans le conteneur Docker**
 - **Chiffrement TLS pour la sécurité des emails**
 - **Support DKIM pour l'authentification des emails**
+- **Templates d'emails modifiables et séparés du code principal**
 - Protection contre les abus avec rate limiting
 - Configuration facile via variables d'environnement
 - **Port par défaut : 4058**
@@ -55,6 +56,15 @@ FROM_NAME=Votre Nom ou Entreprise
 # Origines autorisées pour les requêtes CORS
 ALLOWED_ORIGINS=https://votre-site.com,http://localhost:3000
 ```
+
+### Personnalisation des templates d'emails
+
+Les templates d'emails sont maintenant séparés dans le dossier `templates/` :
+
+- `admin-notification.js` : Template pour l'email envoyé à l'administrateur du site
+- `user-confirmation.js` : Template pour l'email de confirmation envoyé à l'utilisateur
+
+Vous pouvez modifier ces fichiers pour personnaliser le contenu des emails selon vos besoins.
 
 ### Utilisation avec un service SMTP externe
 
