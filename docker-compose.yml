@@ -3,7 +3,7 @@ services:
     build: .
     ports:
       - "4058:4058"  # Port HTTP
-      - "4059:4059"  # Port HTTPS
+      - "4057:4057"  # Port HTTPS
     env_file:
       - .env
     restart: unless-stopped
