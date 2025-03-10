@@ -59,14 +59,22 @@ const createTransporter = () => {
     });
   } 
   
-  // Sinon, utiliser Postfix local
+  // Configuration DKIM si disponible
+  const dkimConfig = process.env.DKIM_PRIVATE_KEY && {
+    domainName: process.env.DKIM_DOMAIN || process.env.FROM_EMAIL.split('@')[1],
+    keySelector: process.env.DKIM_SELECTOR || 'mail',
+    privateKey: process.env.DKIM_PRIVATE_KEY.replace(/\\n/g, '\n')
+  };
+  
+  // Sinon, utiliser Postfix local avec options de sécurité
   return nodemailer.createTransport({
     host: 'localhost',
     port: 25,
     secure: false,
     tls: {
       rejectUnauthorized: false
-    }
+    },
+    dkim: dkimConfig
   });
 };
 
@@ -99,8 +107,22 @@ app.post('/api/contact', async (req, res) => {
   try {
     const transporter = createTransporter();
     
+    // Options communes pour tous les emails
+    const messageId = `<${Date.now()}.${Math.random().toString(36).substring(2, 15)}@${process.env.FROM_EMAIL ? process.env.FROM_EMAIL.split('@')[1] : 'example.com'}>`;
+    const commonOptions = {
+      messageId,
+      headers: {
+        'X-Mailer': 'Simple Mail Server',
+        'List-Unsubscribe': `<mailto:${process.env.FROM_EMAIL || 'contact@example.com'}?subject=unsubscribe>`,
+        'X-Priority': '3', // Normal
+        'X-MSMail-Priority': 'Normal',
+        'Importance': 'Normal',
+      }
+    };
+    
     // Email au propriétaire du site
     await transporter.sendMail({
+      ...commonOptions,
       from: `"${process.env.FROM_NAME || 'Formulaire de contact'}" <${process.env.FROM_EMAIL || 'contact@example.com'}>`,
       to: process.env.TO_EMAIL || 'votre.email@example.com',
       subject: `Nouveau message: ${subject || 'Sans objet'}`,
@@ -122,8 +144,10 @@ app.post('/api/contact', async (req, res) => {
     
     // Email de confirmation à l'expéditeur
     await transporter.sendMail({
+      ...commonOptions,
       from: `"${process.env.FROM_NAME || 'Votre Site'}" <${process.env.FROM_EMAIL || 'contact@example.com'}>`,
       to: email,
+      replyTo: process.env.FROM_EMAIL || 'contact@example.com',
       subject: process.env.CONFIRMATION_SUBJECT || 'Confirmation de votre message',
       text: `
         Bonjour ${name},
