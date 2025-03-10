@@ -7,6 +7,7 @@ Un serveur Node.js complet pour gérer l'envoi d'emails à partir d'un formulair
 - API REST pour l'envoi d'emails
 - Envoi automatique d'un email de confirmation à l'expéditeur
 - Support pour SMTP local (Postfix) ou services externes (SendGrid, etc.)
+- **Postfix intégré directement dans le conteneur Docker**
 - Protection contre les abus avec rate limiting
 - Configuration facile via variables d'environnement
 - **Port par défaut : 4058**
@@ -15,7 +16,7 @@ Un serveur Node.js complet pour gérer l'envoi d'emails à partir d'un formulair
 
 - Node.js (v14 ou supérieur)
 - NPM ou Yarn
-- Un serveur SMTP (Postfix) configuré localement ou un compte chez un fournisseur de services SMTP
+- Docker et Docker Compose (pour l'installation avec Docker)
 
 ## Installation
 
@@ -153,6 +154,8 @@ const handleSubmit = async (e) => {
    docker-compose up -d
    ```
 
+Le serveur est entièrement autonome, avec Postfix installé directement dans le conteneur Docker. Vous n'avez pas besoin d'installer séparément un serveur de messagerie sur votre machine hôte.
+
 ### Sur un service PaaS (Heroku, Railway, etc.)
 
 Suivez la documentation du service pour déployer une application Node.js et configurez les variables d'environnement via l'interface du service.
@@ -166,6 +169,18 @@ curl -X POST http://localhost:4058/api/contact \
   -H "Content-Type: application/json" \
   -d '{"name":"Test User","email":"votre@email.com","subject":"Test","message":"Test message"}'
 ```
+
+## Résolution des problèmes courants
+
+### Erreur de proxy
+
+Si vous obtenez une erreur concernant `X-Forwarded-For` et `trust proxy`, c'est normal lorsque vous exécutez le serveur derrière un proxy (comme Nginx). Cette version du serveur est déjà configurée pour corriger ce problème.
+
+### Erreur de connexion SMTP
+
+Si vous rencontrez des erreurs de connexion SMTP, vérifiez :
+- Si vous utilisez le serveur Postfix intégré, assurez-vous que le port 25 n'est pas bloqué
+- Si vous utilisez un service SMTP externe, vérifiez vos identifiants et la configuration dans le fichier `.env`
 
 ## Sécurité
 
