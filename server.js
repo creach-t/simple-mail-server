@@ -9,6 +9,9 @@ const http = require('http');
 const https = require('https');
 const path = require('path');
 
+// Importer les templates d'emails
+const emailTemplates = require('./templates');
+
 // Charger les variables d'environnement
 dotenv.config();
 
@@ -120,59 +123,27 @@ app.post('/api/contact', async (req, res) => {
       }
     };
     
-    // Email au propriétaire du site
+    // Email au propriétaire du site - Utiliser le template adminNotification
+    const adminEmailOptions = emailTemplates.adminNotification({ name, email, subject, message });
     await transporter.sendMail({
       ...commonOptions,
+      ...adminEmailOptions,
       from: `"${process.env.FROM_NAME || 'Formulaire de contact'}" <${process.env.FROM_EMAIL || 'contact@example.com'}>`,
       to: process.env.TO_EMAIL || 'votre.email@example.com',
-      subject: `Nouveau message: ${subject || 'Sans objet'}`,
-      text: `
-        Nom: ${name}
-        Email: ${email}
-        
-        Message:
-        ${message}
-      `,
-      html: `
-        <h3>Nouveau message de contact</h3>
-        <p><strong>Nom:</strong> ${name}</p>
-        <p><strong>Email:</strong> ${email}</p>
-        <p><strong>Message:</strong></p>
-        <p>${message.replace(/\n/g, '<br>')}</p>
-      `
     });
     
-    // Email de confirmation à l'expéditeur
+    // Email de confirmation à l'expéditeur - Utiliser le template userConfirmation
+    const userEmailOptions = emailTemplates.userConfirmation({ 
+      name, 
+      message, 
+      env: process.env 
+    });
     await transporter.sendMail({
       ...commonOptions,
+      ...userEmailOptions,
       from: `"${process.env.FROM_NAME || 'Votre Site'}" <${process.env.FROM_EMAIL || 'contact@example.com'}>`,
       to: email,
       replyTo: process.env.FROM_EMAIL || 'contact@example.com',
-      subject: process.env.CONFIRMATION_SUBJECT || 'Confirmation de votre message',
-      text: `
-        Bonjour ${name},
-        
-        ${process.env.CONFIRMATION_TEXT || `Nous avons bien reçu votre message et nous vous remercions de nous avoir contactés.
-        Notre équipe vous répondra dans les plus brefs délais.
-        
-        Voici un rappel de votre message :
-        ------------------------
-        ${message}
-        ------------------------`}
-        
-        Cordialement,
-        ${process.env.SIGNATURE || "L'équipe de votre site"}
-      `,
-      html: `
-        <p>Bonjour ${name},</p>
-        <p>${process.env.CONFIRMATION_HTML || `Nous avons bien reçu votre message et nous vous remercions de nous avoir contactés.</p>
-        <p>Notre équipe vous répondra dans les plus brefs délais.</p>
-        <p><strong>Voici un rappel de votre message :</strong></p>
-        <blockquote style="border-left: 2px solid #ccc; padding-left: 10px;">
-          ${message.replace(/\n/g, '<br>')}
-        </blockquote>`}
-        <p>Cordialement,<br>${process.env.SIGNATURE || "L'équipe de votre site"}</p>
-      `
     });
     
     res.status(200).json({ success: true, message: 'Email envoyé avec succès' });
