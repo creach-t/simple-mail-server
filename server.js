@@ -157,6 +157,6 @@ app.post('/api/contact', async (req, res) => {
 
 // Démarrer le serveur HTTP
 const httpServer = http.createServer(app);
-httpServer.listen(PORT, () => {
+httpServer.listen(PORT, '0.0.0.0', () => {
   console.log(`Serveur de mailing en écoute sur le port ${PORT}`);
 });
