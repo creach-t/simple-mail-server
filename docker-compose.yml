@@ -1,8 +1,8 @@
 services:
   mail-server:
     build: .
-    expose:
-      - "4058"  # Port HTTP interne
+    ports:
+      - "4058:4058"  # Port HTTP interne
     env_file:
       - .env
     restart: unless-stopped
