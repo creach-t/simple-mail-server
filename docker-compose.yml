@@ -1,12 +1,41 @@
 services:
   mail-server:
     build: .
-    ports:
-      - "4058:4058"  # Port HTTP
-      - "4057:4057"  # Port HTTPS
+    expose:
+      - "4058"  # Port HTTP interne
     env_file:
       - .env
     restart: unless-stopped
     volumes:
       - ./logs:/app/logs
-      - /etc/letsencrypt:/etc/letsencrypt:ro  # Montage des certificats SSL (lecture seule)
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.mail.rule=Host(`mail.creachtheo.fr`)"
+      - "traefik.http.routers.mail.entrypoints=websecure"
+      - "traefik.http.routers.mail.tls.certresolver=myresolver"
+      - "traefik.http.services.mail.loadbalancer.server.port=4058"
+
+  traefik:
+    image: traefik:v2.10
+    container_name: traefik
+    restart: unless-stopped
+    command:
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--entrypoints.web.address=:80"
+      - "--entrypoints.websecure.address=:443"
+      - "--certificatesresolvers.myresolver.acme.httpchallenge=true"
+      - "--certificatesresolvers.myresolver.acme.httpchallenge.entrypoint=web"
+      - "--certificatesresolvers.myresolver.acme.email=creach.t@gmail.com"
+      - "--certificatesresolvers.myresolver.acme.storage=/letsencrypt/acme.json"
+      - "--entrypoints.web.http.redirections.entrypoint.to=websecure"
+      - "--entrypoints.web.http.redirections.entrypoint.scheme=https"
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - traefik-certificates:/letsencrypt
+
+volumes:
+  traefik-certificates:
