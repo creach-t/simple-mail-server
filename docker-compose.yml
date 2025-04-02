@@ -16,6 +16,7 @@ services:
       - "traefik.http.services.mail.loadbalancer.server.port=4058"
     networks:
       - traefik-public
+
 networks:
   traefik-public:
     external: true
