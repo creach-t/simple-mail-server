@@ -14,7 +14,8 @@ services:
       - "traefik.http.routers.mail.entrypoints=websecure"
       - "traefik.http.routers.mail.tls.certresolver=myresolver"
       - "traefik.http.services.mail.loadbalancer.server.port=4058"
-
+  networks:
+      - traefik-public
 networks:
   traefik-public:
     external: true
